@@ -20,8 +20,10 @@ public class SimpleHttpProxyApplication {
             System.out.println("Please provide config file path.");
             return;
         }
-        disableSslVerification();
         Configuration.load(args[0]);
+        if (Configuration.shouldDisableSslVerification()) {
+            disableSslVerification();
+        }
         ExecutorService executorService = Executors.newFixedThreadPool(Configuration.getThreadPoolSize());
         HttpServer server = HttpServer.create(new InetSocketAddress("localhost", Configuration.getPort()), 0);
         server.setExecutor(executorService);

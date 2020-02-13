@@ -12,6 +12,7 @@ public class Configuration {
     private static int bufferSize;
     private static int port;
     private static int threadPoolSize;
+    private static boolean disableSslVerification;
 
     public static void load(String path) throws IOException {
         Properties configs = new Properties();
@@ -20,6 +21,7 @@ public class Configuration {
         bufferSize = Integer.parseInt(configs.getProperty("bufferSize", "1024"));
         port = Integer.parseInt(configs.getProperty("port", "0"));
         threadPoolSize = Integer.parseInt(configs.getProperty("threadPoolSize", "200"));
+        disableSslVerification = Boolean.parseBoolean(configs.getProperty("disableSslVerification", "false"));
     }
 
     public static String getProxyUrl() {
@@ -36,6 +38,10 @@ public class Configuration {
 
     public static int getThreadPoolSize() {
         return threadPoolSize;
+    }
+
+    public static boolean shouldDisableSslVerification() {
+        return disableSslVerification;
     }
 
 }
