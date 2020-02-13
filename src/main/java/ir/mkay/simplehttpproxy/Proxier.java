@@ -70,7 +70,7 @@ public class Proxier {
     }
 
     private void copyInToOut(InputStream in, OutputStream out) throws IOException {
-        byte[] buffer = new byte[Configuration.getBufferSize()];
+        byte[] buffer = new byte[Configurations.getBufferSize()];
         int len;
         while ((len = in.read(buffer)) != -1) {
             out.write(buffer, 0, len);

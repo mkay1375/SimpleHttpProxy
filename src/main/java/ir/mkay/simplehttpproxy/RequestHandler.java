@@ -14,7 +14,7 @@ public class RequestHandler implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         try {
-            Proxier proxier = new Proxier(Configuration.getProxyUrl() + exchange.getRequestURI(), exchange);
+            Proxier proxier = new Proxier(Configurations.getProxyUrl() + exchange.getRequestURI(), exchange);
             proxier.proxy();
         } catch (Exception e) {
             exchange.getResponseHeaders().add("proxy-error", e.getMessage());

@@ -20,16 +20,16 @@ public class SimpleHttpProxyApplication {
             System.out.println("Please provide config file path.");
             return;
         }
-        Configuration.load(args[0]);
-        if (Configuration.shouldDisableSslVerification()) {
+        Configurations.load(args[0]);
+        if (Configurations.shouldDisableSslVerification()) {
             disableSslVerification();
         }
-        ExecutorService executorService = Executors.newFixedThreadPool(Configuration.getThreadPoolSize());
-        HttpServer server = HttpServer.create(new InetSocketAddress("localhost", Configuration.getPort()), 0);
+        ExecutorService executorService = Executors.newFixedThreadPool(Configurations.getThreadPoolSize());
+        HttpServer server = HttpServer.create(new InetSocketAddress("localhost", Configurations.getPort()), 0);
         server.setExecutor(executorService);
         server.createContext("/", new RequestHandler());
         server.start();
-        System.out.printf("Server started on port %d with %d thread(s).\n", Configuration.getPort(), Configuration.getThreadPoolSize());
+        System.out.printf("Server started on port %d with %d thread(s).\n", Configurations.getPort(), Configurations.getThreadPoolSize());
     }
 
     public static void disableSslVerification() {

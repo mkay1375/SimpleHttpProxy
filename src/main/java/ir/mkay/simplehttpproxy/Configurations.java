@@ -6,7 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
 
-public class Configuration {
+public class Configurations {
 
     private static String proxyUrl;
     private static int bufferSize;
