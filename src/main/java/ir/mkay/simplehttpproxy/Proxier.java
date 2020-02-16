@@ -2,9 +2,7 @@ package ir.mkay.simplehttpproxy;
 
 import com.sun.net.httpserver.HttpExchange;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.ProtocolException;
 import java.net.URL;
@@ -22,6 +20,7 @@ public class Proxier {
         this.targetUrl = targetUrl;
         URL url = new URL(targetUrl);
         this.connection = (HttpURLConnection) url.openConnection();
+        this.connection.setInstanceFollowRedirects(false);
         this.exchange = exchange;
     }
 
@@ -29,9 +28,14 @@ public class Proxier {
         copyRequestHeaders();
         copyMethod();
         copyRequestContent();
-        copyResponseHeaders();
-        copyStatusAndLength();
-        copyResponseContent();
+        try {
+            setTimeouts();
+            copyResponseHeaders();
+            copyStatusAndLength();
+            copyResponseContent();
+        } catch (Exception e) {
+            sendProxyError(e);
+        }
     }
 
     private void copyRequestHeaders() {
@@ -53,6 +57,11 @@ public class Proxier {
         }
     }
 
+    private void setTimeouts() {
+        connection.setConnectTimeout(Configurations.getProxyConnectTimeout());
+        connection.setReadTimeout(Configurations.getProxyReadTimeout());
+    }
+
     private void copyResponseHeaders() {
         copyHeaders(connection.getHeaderFields(), exchange.getResponseHeaders()::add);
     }
@@ -62,11 +71,33 @@ public class Proxier {
     }
 
     private void copyResponseContent() throws IOException {
-        try (InputStream in = connection.getInputStream()) {
-            try (OutputStream out = exchange.getResponseBody()) {
-                copyInToOut(in, out);
-            }
+        InputStream in;
+        if (connection.getResponseCode() < 400) {
+            in = connection.getInputStream();
+        } else {
+            in = connection.getErrorStream();
         }
+
+        try (OutputStream out = exchange.getResponseBody()) {
+            copyInToOut(in, out);
+        } finally {
+            if (in != null) in.close();
+        }
+    }
+
+
+    private void sendProxyError(Exception e) throws IOException {
+        StringWriter responseContent = new StringWriter();
+        responseContent.append("Proxy Error");
+        if (Configurations.shouldAddProxyErrorDetailsToResponse()) {
+            responseContent.append("; ");
+            e.printStackTrace(new PrintWriter(responseContent));
+        } else {
+            responseContent.append(".");
+        }
+        byte[] responseContentBytes = responseContent.toString().getBytes();
+        exchange.sendResponseHeaders(500, responseContentBytes.length);
+        exchange.getResponseBody().write(responseContentBytes);
     }
 
     private void copyInToOut(InputStream in, OutputStream out) throws IOException {
