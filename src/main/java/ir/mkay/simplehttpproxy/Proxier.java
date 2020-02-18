@@ -15,6 +15,7 @@ public class Proxier {
     private final String targetUrl;
     private final HttpURLConnection connection;
     private final HttpExchange exchange;
+    private boolean responseHeadersSent = false;
 
     public Proxier(String targetUrl, HttpExchange exchange) throws IOException {
         this.targetUrl = targetUrl;
@@ -24,17 +25,18 @@ public class Proxier {
         this.exchange = exchange;
     }
 
-    public void proxy() throws IOException {
-        copyRequestHeaders();
+    public void proxy() throws Throwable {
         copyMethod();
+        copyRequestHeaders();
         copyRequestContent();
         try {
             setTimeouts();
             copyResponseHeaders();
-            copyStatusAndLength();
+            sendResponseHeaders();
             copyResponseContent();
-        } catch (Exception e) {
-            sendProxyError(e);
+        } catch (Throwable e) {
+            if (!responseHeadersSent) sendProxyError(e);
+            else throw e;
         }
     }
 
@@ -66,8 +68,19 @@ public class Proxier {
         copyHeaders(connection.getHeaderFields(), exchange.getResponseHeaders()::add);
     }
 
-    private void copyStatusAndLength() throws IOException {
-        exchange.sendResponseHeaders(connection.getResponseCode(), connection.getContentLength());
+    private void sendResponseHeaders() throws IOException {
+        int contentLength = connection.getContentLength();
+        /*
+            When getContentLength() returns -1, it means there is no 'Content-Length' header present;
+            But in sendResponseHeaders method, -1 (as contentLength) means no response content should be sent;
+            Therefore when we get -1 from getContentLength(), we set contentLength to 0 (which means arbitrary length of content
+            in sendResponseHeaders method).
+         */
+        if (contentLength == -1) contentLength = 0;
+
+        exchange.sendResponseHeaders(connection.getResponseCode(), contentLength);
+        this.responseHeadersSent = true;
+
     }
 
     private void copyResponseContent() throws IOException {
@@ -86,7 +99,7 @@ public class Proxier {
     }
 
 
-    private void sendProxyError(Exception e) throws IOException {
+    private void sendProxyError(Throwable e) throws IOException {
         StringWriter responseContent = new StringWriter();
         responseContent.append("Proxy Error");
         if (Configurations.shouldAddProxyErrorDetailsToResponse()) {

@@ -7,19 +7,22 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
+
 public class RequestHandler implements HttpHandler {
 
     private static final Logger log = Logger.getLogger(RequestHandler.class.getSimpleName());
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
+        String from = exchange.getRequestURI().toString();
+        String target = Configurations.getProxyUrl() + exchange.getRequestURI();
         try {
-            Proxier proxier = new Proxier(Configurations.getProxyUrl() + exchange.getRequestURI(), exchange);
+            Proxier proxier = new Proxier(target, exchange);
             proxier.proxy();
-        } catch (Exception e) {
-            exchange.getResponseHeaders().add("proxy-error", e.getMessage());
+        } catch (Throwable e) {
             log.log(Level.WARNING, "At '" + exchange.getRequestURI() + "'", e);
-            throw e;
+            throw new IOException(format("Error while proxying %s to %s", from, target), e);
         }
     }
 }
