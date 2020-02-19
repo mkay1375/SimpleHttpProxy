@@ -114,6 +114,8 @@ public class Proxier {
     }
 
     private void copyInToOut(InputStream in, OutputStream out) throws IOException {
+        if (in == null || out == null) return;
+
         byte[] buffer = new byte[Configurations.getBufferSize()];
         int len;
         while ((len = in.read(buffer)) != -1) {
